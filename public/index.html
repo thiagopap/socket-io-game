@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+    <style type="text/css">
+      * {
+        padding: 0;
+        margin: 0;
+        vertical-align: baseline;
+        list-style: none;
+        border: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      style="display: flex; min-height: 100%; flex-direction: column; align-items:center; justify-content: center"
+    >
+      <canvas
+        id="game"
+        width="800"
+        height="600"
+        style="box-shadow: 0 0 5px #cecece; background-color: #FFF;"
+      >
+      </canvas>
+      <audio
+        id="audioCoin"
+        src="https://themushroomkingdom.net/sounds/wav/smw/smw_coin.wav"
+        preload="auto"
+      ></audio>
+      <div style="display:flex;flex-direction: column;align-items: center">
+        <div>Placar</div>
+        <div id="player"></div>
+      </div>
+    </div>
+  </body>
+  <script type="text/javascript">
+    var socket = io("http://localhost:3000");
+
+    const ctx = document.getElementById("game").getContext("2d");
+
+    const UP = 37;
+    const LEFT = 38;
+    const DOWN = 39;
+    const RIGHT = 40;
+
+    const pixelsPerStep = 20;
+
+    var lastKeyPressed;
+
+    var players = [];
+    var currentPlayer = null;
+    var fruits = [];
+
+    $(document).ready(function() {
+      $(document).keydown(function(e) {
+        setTimeout(() => {
+          processInput(e.keyCode || e.which);
+        }, 100);
+      });
+    });
+
+    $(window).on("unload", function() {
+      players.pop(currentPlayer);
+      socket.disconnect();
+      return "ok";
+    });
+
+    var processInput = function(keyCode) {
+      lastKeyPressed = keyCode;
+      updatePlayerPosition();
+
+      var tempPlayer = players.find(p => p.name === socket.id);
+
+      tempPlayer.x = currentPlayer.x;
+      tempPlayer.y = currentPlayer.y;
+      tempPlayer.points = currentPlayer.points;
+
+      socket.emit("updatePlayer", currentPlayer);
+      render();
+    };
+
+    var updatePlayerPosition = function() {
+      if (currentPlayer) {
+        if (lastKeyPressed == UP) {
+          if (currentPlayer.x - pixelsPerStep < 0) {
+            currentPlayer.x = 780;
+          } else {
+            currentPlayer.x -= pixelsPerStep;
+          }
+        } else if (lastKeyPressed == DOWN) {
+          if (currentPlayer.x + pixelsPerStep >= 800) {
+            currentPlayer.x = 0;
+          } else {
+            currentPlayer.x += pixelsPerStep;
+          }
+        } else if (lastKeyPressed == LEFT) {
+          if (currentPlayer.y - pixelsPerStep < 0) {
+            currentPlayer.y = 580;
+          } else {
+            currentPlayer.y -= pixelsPerStep;
+          }
+        } else if (lastKeyPressed == RIGHT) {
+          if (currentPlayer.y + pixelsPerStep >= 600) {
+            currentPlayer.y = 0;
+          } else {
+            currentPlayer.y += pixelsPerStep;
+          }
+        }
+      }
+      lastKeyPressed = null;
+    };
+
+    socket.on("createdPlayers", data => {
+      players = data;
+      currentPlayer = players.find(p => p.name === socket.id);
+      render();
+    });
+
+    socket.on("updateGame", function(data) {
+      console.log(`recebeu atualizações dos players`, data);
+      players = data;
+      render();
+    });
+
+    socket.on("updatedFruits", function(data) {
+      fruits = data;
+      console.log("updatedFruits", data);
+      render();
+    });
+
+    socket.on("createdFruits", function(data) {
+      fruits = data;
+      console.log("createdFruits", fruits);
+      render();
+    });
+
+    var render = function() {
+      ctx.clearRect(0, 0, 800, 600);
+      for (player of players) {
+        if (socket.id === player.name) {
+          ctx.fillStyle = "#FFD700";
+        } else {
+          ctx.fillStyle = "gray";
+        }
+        ctx.fillRect(player.x, player.y, 20, 20);
+      }
+
+      renderFruits();
+    };
+
+    var renderFruits = function() {
+      for (fruit of fruits) {
+        if (currentPlayer.x === fruit.x && currentPlayer.y === fruit.y) {
+          currentPlayer.points += fruit.points;
+          socket.emit("capturedFruit", fruit);
+          fruits.pop(fruit);
+
+          if (player.points % 10 === 0) {
+            document.getElementById("audioCoin").play();
+          }
+
+          document.getElementById("player").innerHTML =
+            player.name + " - " + player.points + " points.";
+
+          var tempPlayer = players.find(p => p.name === socket.id);
+          tempPlayer.x = currentPlayer.x;
+          tempPlayer.y = currentPlayer.y;
+          tempPlayer.points = currentPlayer.points;
+
+          socket.emit("updatePlayer", currentPlayer);
+        }
+        console.log(fruit);
+        ctx.fillStyle = "green";
+        ctx.fillRect(fruit.x, fruit.y, 20, 20);
+      }
+    };
+  </script>
+</html>
