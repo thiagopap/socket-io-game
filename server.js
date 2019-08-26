@@ -20,7 +20,6 @@ let fruits = [];
 io.on("connection", socket => {
   console.log(`Client connected: ${socket.id}`);
 
-  let fruit = generateRandomFruit();
   let player = createPlayer(
     socket.id,
     20 * Math.floor(Math.random() * maxElementX),
@@ -29,12 +28,10 @@ io.on("connection", socket => {
   );
 
   players.push(player);
-  fruits.push(fruit);
 
   socket.emit("createdPlayers", players);
+  socket.broadcast.emit("createdFruits", players);
   socket.emit("createdFruits", fruits);
-  socket.broadcast.emit("updateGame", players);
-  socket.broadcast.emit("updatedFruits", fruits);
 
   socket.on("updatePlayer", data => {
     player.x = data.x;
@@ -44,26 +41,20 @@ io.on("connection", socket => {
     socket.broadcast.emit("updateGame", players);
   });
 
-  socket.on("capturedFruit", data => {
-    console.log("capturedFruit");
-    var tempFruit = fruits.find(f => f.x === data.x && f.y === data.y);
-    fruits.pop(tempFruit);
-    socket.broadcast.emit("updatedFruits", fruits);
-    socket.emit("createdFruits", fruits);
+  socket.on("capturedFruit", fruit => {
+    fruits.pop(fruits.find(f => f.x === fruit.x && f.y === fruit.y));
   });
+
+  setInterval(() => { 
+    socket.broadcast.emit("createdFruits", fruits);    
+    socket.emit("createdFruits", fruits);
+  }, 100);
 
   socket.on("disconnect", () => {
     var currentPlayer = players.find(p => p.name === socket.id);
     players.pop(currentPlayer);
     socket.broadcast.emit("updateGame", players);
   });
-
-  setInterval(() => {
-    var tempFruit = generateRandomFruit();
-    fruits.push(tempFruit);
-    socket.broadcast.emit("updatedFruits", fruits);
-    socket.emit("createdFruits", fruits);
-  }, 10000);
 });
 ///////////////////////////////////////////////////////////
 const maxElementX = 780 / 20 + 1;
@@ -89,8 +80,25 @@ var createFruit = (x, y, points) => {
 var generateRandomFruit = function() {
   let randomX = 20 * Math.floor(Math.random() * maxElementX);
   let randomY = 20 * Math.floor(Math.random() * maxElementY);
-  var fruit = createFruit(randomX, randomY, 1);
-  return fruit;
+
+  var fruitExists = fruits.find(f => f.x === randomX && f.y === randomY);
+
+  if (!fruitExists) {
+    var fruit = createFruit(randomX, randomY, 1);
+    return fruit;
+  }
+
+  return null;
 };
+
+setInterval(() => {
+  var fruit = generateRandomFruit();
+  if (fruit) {
+    fruits.push(fruit);
+  } else {
+    fruit = generateRandomFruit();
+    fruits.push(fruit);
+  }  
+}, 10000);
 ///////////////////////////////////////////////////////////
 server.listen(3000);

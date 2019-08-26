@@ -132,12 +132,6 @@
       render();
     });
 
-    socket.on("updatedFruits", function(data) {
-      fruits = data;
-      console.log("updatedFruits", data);
-      render();
-    });
-
     socket.on("createdFruits", function(data) {
       fruits = data;
       console.log("createdFruits", fruits);
@@ -153,17 +147,14 @@
           ctx.fillStyle = "gray";
         }
         ctx.fillRect(player.x, player.y, 20, 20);
-      }
 
-      renderFruits();
-    };
+        var capturedFruit = fruits.find(f => f.x === player.x && f.y === player.y);
+        console.log(capturedFruit);
 
-    var renderFruits = function() {
-      for (fruit of fruits) {
-        if (currentPlayer.x === fruit.x && currentPlayer.y === fruit.y) {
-          currentPlayer.points += fruit.points;
-          socket.emit("capturedFruit", fruit);
-          fruits.pop(fruit);
+        if (capturedFruit) {
+          player.points += capturedFruit.points;
+          socket.emit("capturedFruit", capturedFruit);
+          fruits.pop(capturedFruit);
 
           if (player.points % 10 === 0) {
             document.getElementById("audioCoin").play();
@@ -172,14 +163,14 @@
           document.getElementById("player").innerHTML =
             player.name + " - " + player.points + " points.";
 
-          var tempPlayer = players.find(p => p.name === socket.id);
-          tempPlayer.x = currentPlayer.x;
-          tempPlayer.y = currentPlayer.y;
-          tempPlayer.points = currentPlayer.points;
-
-          socket.emit("updatePlayer", currentPlayer);
+          socket.emit("updatePlayer", player);
         }
-        console.log(fruit);
+      }
+      renderFruits();
+    };
+
+    var renderFruits = function() {
+      for (fruit of fruits) {
         ctx.fillStyle = "green";
         ctx.fillRect(fruit.x, fruit.y, 20, 20);
       }
