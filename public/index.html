@@ -30,18 +30,20 @@
         style="flex:3; display:flex;flex-direction:column; align-content: center; justify-content: center ; padding:20px;"
       >
         <div id="playerInfo" style="display:flex; justify-content: center;">
-          <input
-            type="text"
-            id="playerName"
-            style="border: 1px solid #c0c0c0; line-height: 20px;"
-            placeholder="Nome"
-          />
-          <input
-            type="submit"
-            value="Jogar!"
-            onclick="play()"
-            style="font-weight:bold; margin-left:20px; width:150px; border: 1px solid #c0c0c0; color:white; background-color:#6f00ff"
-          />
+          <form>
+            <input
+              type="text"
+              id="playerName"
+              style="border: 1px solid #c0c0c0; line-height: 20px;"
+              placeholder="Nome"
+            />
+            <input
+              id="playButton"
+              type="submit"
+              value="Jogar!"
+              style="font-weight:bold; margin-left:20px; width:150px; height:24px; border: 1px solid #c0c0c0; color:white; background-color:#6f00ff"
+            />
+          </form>
         </div>
         <div
           id="gameContainer"
@@ -51,7 +53,7 @@
             id="game"
             width="800"
             height="600"
-            style="box-shadow: 0 0 5px #f8f8f8; background-color: #f8f8f8;"
+            style="box-shadow: 0 0 5px #c0c0c0; background-color: #f8f8f8;"
           >
           </canvas>
           <audio
@@ -63,9 +65,11 @@
       </div>
       <div
         id="placar"
-        style="background-color:#e4e4e4; display:none;flex-direction: column;align-items: center; flex:1"
+        style="box-shadow: 0 0 2px #c0c0c0; background-color:#f8f8f8; display:none;flex-direction: column;align-items: center; flex:1"
       >
-        <span style="margin-top:20px;margin-bottom:20px"><b>Placar</b></span>
+        <span id="totalPlayers" style="margin-top:20px;margin-bottom:20px"
+          ><b>Participantes</b></span
+        >
         <div id="player"></div>
       </div>
     </div>
@@ -89,6 +93,8 @@
     var fruits = [];
 
     $(document).ready(function() {
+      document.getElementById("playerName").focus();
+
       $(document).keydown(function(e) {
         processInput(e.keyCode || e.which);
       });
@@ -189,11 +195,14 @@
     var render = function() {
       ctx.clearRect(0, 0, 800, 600);
       document.getElementById("player").innerHTML = "";
+      document.getElementById(
+        "totalPlayers"
+      ).innerHTML = `Participantes (${players.length})`;
       for (player of players) {
         if (socket.id === player.id) {
           ctx.fillStyle = "#6f00ff";
         } else {
-          ctx.fillStyle = "#c0c0c0";
+          ctx.fillStyle = "#696969";
         }
         ctx.fillRect(player.x, player.y, 20, 20);
 
@@ -203,14 +212,14 @@
             player.name +
             " - " +
             player.points +
-            " points.</b><br/>";
+            " pontos</b><br/>";
         } else {
           document.getElementById("player").innerHTML +=
-            "<span style='color:#000'>" +
+            "<span style='color:#696969'>" +
             player.name +
             " - " +
             player.points +
-            " points.</span><br/>";
+            " pontos</span><br/>";
         }
       }
       renderFruits();
@@ -225,24 +234,29 @@
       }
     };
 
-    var play = function() {
-      if (
-        document
-          .getElementById("playerName")
-          .value.toString()
-          .trim() === ""
-      ) {
-        alert("Favor informar o nome.");
-      } else {
-        socket.emit("startGame", {
-          name: document.getElementById("playerName").value
-        });
-        document.getElementById("gameContainer").style.display = "flex";
-        document.getElementById("placar").style.display = "flex";
-        document.getElementById("playerInfo").style.display = "none";
-        window.requestAnimationFrame(render);
-      }
-    };
-    //
+    document
+      .getElementById("playButton")
+      .addEventListener("click", function(event) {
+        event.preventDefault();
+        event.preventDefault();
+        if (
+          document
+            .getElementById("playerName")
+            .value.toString()
+            .trim() === ""
+        ) {
+          alert("Favor informar o nome.");
+          document.getElementById("playerName").value = "";
+          document.getElementById("playerName").focus();
+        } else {
+          socket.emit("startGame", {
+            name: document.getElementById("playerName").value
+          });
+          document.getElementById("gameContainer").style.display = "flex";
+          document.getElementById("placar").style.display = "flex";
+          document.getElementById("playerInfo").style.display = "none";
+          window.requestAnimationFrame(render);
+        }
+      });
   </script>
 </html>
