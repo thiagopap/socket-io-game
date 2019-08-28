@@ -23,28 +23,55 @@
   </head>
   <body>
     <div
-      style="display: flex; min-height: 100%; flex-direction: column; align-items:center; justify-content: center"
+      id="container"
+      style="display:flex; flex-direction: row; justify-content: center; min-height:100%"
     >
-      <canvas
-        id="game"
-        width="800"
-        height="600"
-        style="box-shadow: 0 0 5px #cecece; background-color: #FFF;"
+      <div
+        style="flex:3; display:flex;flex-direction:column; align-content: center; justify-content: center ; padding:20px;"
       >
-      </canvas>
-      <audio
-        id="audioCoin"
-        src="https://themushroomkingdom.net/sounds/wav/smw/smw_coin.wav"
-        preload="auto"
-      ></audio>
-      <div style="display:flex;flex-direction: column;align-items: center">
-        <div>Placar</div>
+        <div id="playerInfo" style="display:flex; justify-content: center;">
+          <input
+            type="text"
+            id="playerName"
+            style="border: 1px solid #c0c0c0; line-height: 20px;"
+            placeholder="Nome"
+          />
+          <input
+            type="submit"
+            value="Jogar!"
+            onclick="play()"
+            style="font-weight:bold; margin-left:20px; width:150px; border: 1px solid #c0c0c0; color:white; background-color:#6f00ff"
+          />
+        </div>
+        <div
+          id="gameContainer"
+          style="display:none; flex:1; justify-content: center; align-items:center"
+        >
+          <canvas
+            id="game"
+            width="800"
+            height="600"
+            style="box-shadow: 0 0 5px #f8f8f8; background-color: #f8f8f8;"
+          >
+          </canvas>
+          <audio
+            id="audioCoin"
+            src="https://themushroomkingdom.net/sounds/wav/smw/smw_coin.wav"
+            preload="auto"
+          ></audio>
+        </div>
+      </div>
+      <div
+        id="placar"
+        style="background-color:#e4e4e4; display:none;flex-direction: column;align-items: center; flex:1"
+      >
+        <span style="margin-top:20px;margin-bottom:20px"><b>Placar</b></span>
         <div id="player"></div>
       </div>
     </div>
   </body>
   <script type="text/javascript">
-    var socket = io("http://localhost:3000");
+    var socket = io("http://192.168.0.28:3000");
 
     const ctx = document.getElementById("game").getContext("2d");
 
@@ -63,30 +90,32 @@
 
     $(document).ready(function() {
       $(document).keydown(function(e) {
-        setTimeout(() => {
-          processInput(e.keyCode || e.which);
-        }, 100);
+        processInput(e.keyCode || e.which);
       });
     });
 
     $(window).on("unload", function() {
-      players.pop(currentPlayer);
+      players = players.filter(function(currentPlayer) {
+        return currentPlayer.id !== socket.id;
+      });
       socket.disconnect();
       return "ok";
     });
 
     var processInput = function(keyCode) {
       lastKeyPressed = keyCode;
-      updatePlayerPosition();
 
-      var tempPlayer = players.find(p => p.name === socket.id);
+      if (players.length > 0) {
+        updatePlayerPosition();
 
-      tempPlayer.x = currentPlayer.x;
-      tempPlayer.y = currentPlayer.y;
-      tempPlayer.points = currentPlayer.points;
+        var tempPlayer = players.find(p => p.id === socket.id);
 
-      socket.emit("updatePlayer", currentPlayer);
-      render();
+        tempPlayer.x = currentPlayer.x;
+        tempPlayer.y = currentPlayer.y;
+        tempPlayer.points = currentPlayer.points;
+
+        socket.emit("updatePlayer", currentPlayer);
+      }
     };
 
     var updatePlayerPosition = function() {
@@ -116,57 +145,77 @@
             currentPlayer.y += pixelsPerStep;
           }
         }
+        var capturedFruit = fruits.find(
+          f => f.x === currentPlayer.x && f.y === currentPlayer.y
+        );
+
+        if (capturedFruit) {
+          console.log(
+            "capturedFruit: ",
+            capturedFruit.x,
+            capturedFruit.y,
+            currentPlayer.name,
+            currentPlayer.x,
+            currentPlayer.y
+          );
+          currentPlayer.points += capturedFruit.points;
+          socket.emit("capturedFruit", capturedFruit);
+          fruits = fruits.filter(function(f) {
+            return !(f.x == capturedFruit.x && f.y == capturedFruit.y);
+          });
+
+          if (currentPlayer.points % 10 === 0) {
+            document.getElementById("audioCoin").play();
+          }
+        }
+
+        lastKeyPressed = null;
       }
-      lastKeyPressed = null;
     };
 
     socket.on("createdPlayers", data => {
       players = data;
-      currentPlayer = players.find(p => p.name === socket.id);
-      render();
+      currentPlayer = players.find(p => p.id === socket.id);
     });
 
     socket.on("updateGame", function(data) {
-      console.log(`recebeu atualizações dos players`, data);
       players = data;
-      render();
     });
 
     socket.on("createdFruits", function(data) {
       fruits = data;
-      console.log("createdFruits", fruits);
-      render();
     });
 
     var render = function() {
       ctx.clearRect(0, 0, 800, 600);
+      document.getElementById("player").innerHTML = "";
       for (player of players) {
-        if (socket.id === player.name) {
-          ctx.fillStyle = "#FFD700";
+        if (socket.id === player.id) {
+          ctx.fillStyle = "#6f00ff";
         } else {
-          ctx.fillStyle = "gray";
+          ctx.fillStyle = "#c0c0c0";
         }
         ctx.fillRect(player.x, player.y, 20, 20);
 
-        var capturedFruit = fruits.find(f => f.x === player.x && f.y === player.y);
-        console.log(capturedFruit);
-
-        if (capturedFruit) {
-          player.points += capturedFruit.points;
-          socket.emit("capturedFruit", capturedFruit);
-          fruits.pop(capturedFruit);
-
-          if (player.points % 10 === 0) {
-            document.getElementById("audioCoin").play();
-          }
-
-          document.getElementById("player").innerHTML =
-            player.name + " - " + player.points + " points.";
-
-          socket.emit("updatePlayer", player);
+        if (player.id === socket.id) {
+          document.getElementById("player").innerHTML +=
+            "<b style='color:#6f00ff'>" +
+            player.name +
+            " - " +
+            player.points +
+            " points.</b><br/>";
+        } else {
+          document.getElementById("player").innerHTML +=
+            "<span style='color:#000'>" +
+            player.name +
+            " - " +
+            player.points +
+            " points.</span><br/>";
         }
       }
       renderFruits();
+
+      window.requestAnimationFrame(render);
     };
 
     var renderFruits = function() {
@@ -175,5 +224,25 @@
         ctx.fillRect(fruit.x, fruit.y, 20, 20);
       }
     };
+
+    var play = function() {
+      if (
+        document
+          .getElementById("playerName")
+          .value.toString()
+          .trim() === ""
+      ) {
+        alert("Favor informar o nome.");
+      } else {
+        socket.emit("startGame", {
+          name: document.getElementById("playerName").value
+        });
+        document.getElementById("gameContainer").style.display = "flex";
+        document.getElementById("placar").style.display = "flex";
+        document.getElementById("playerInfo").style.display = "none";
+        window.requestAnimationFrame(render);
+      }
+    };
+    //
   </script>
 </html>
