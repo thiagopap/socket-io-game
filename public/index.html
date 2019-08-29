@@ -29,19 +29,72 @@
       <div
         style="flex:3; display:flex;flex-direction:column; align-content: center; justify-content: center ; padding:20px;"
       >
-        <div id="playerInfo" style="display:flex; justify-content: center;">
-          <form>
+        <div
+          id="playerInfo"
+          style="display:flex; flex-direction: row; justify-content: center;"
+        >
+          <form style="display:flex; flex-direction:column">
             <input
               type="text"
               id="playerName"
-              style="border: 1px solid #c0c0c0; line-height: 20px;"
+              style="border: 1px solid #c0c0c0; line-height: 20px;padding:5px;"
               placeholder="Nome"
             />
+            <div style="display:flex;flex-direction:row;">
+              <div style="display:flex;flex-direction:column;padding:5px;">
+                <div
+                  style="display:flex;flex-direction:column;font-size: 20px;text-align:center;align-items:center;justify-content: center"
+                >
+                  <span style="width:20px">&#x1F47D;</span>
+                  <input name="avatar" type="radio" value="alien" />
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;padding:5px;">
+                <div
+                  style="display:flex;flex-direction:column;font-size: 20px;text-align:center;align-items:center;justify-content: center"
+                >
+                  <span style="width:20px">&#x1F47B;</span>
+                  <input name="avatar" type="radio" value="ghost" />
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;padding:5px;">
+                <div
+                  style="display:flex;flex-direction:column;font-size: 20px;text-align:center;align-items:center;justify-content: center"
+                >
+                  <span style="width:20px">&#x1F47E;</span>
+                  <input name="avatar" type="radio" value="space-invader" />
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;padding:5px;">
+                <div
+                  style="display:flex;flex-direction:column;font-size: 20px;text-align:center;align-items:center;justify-content: center"
+                >
+                  <span style="width:20px">&#x1F921;</span>
+                  <input name="avatar" type="radio" value="clown" />
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;padding:5px;">
+                <div
+                  style="display:flex;flex-direction:column;font-size: 20px;text-align:center;align-items:center;justify-content: center"
+                >
+                  <span style="width:20px">&#x1F4A9;</span>
+                  <input name="avatar" type="radio" value="poop" />
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;padding:5px;">
+                <div
+                  style="display:flex;flex-direction:column;font-size: 20px;text-align:center;align-items:center;justify-content: center"
+                >
+                  <span style="width:20px">&#x1F916;</span>
+                  <input name="avatar" type="radio" value="robot" />
+                </div>
+              </div>
+            </div>
             <input
               id="playButton"
               type="submit"
               value="Jogar!"
-              style="font-weight:bold; margin-left:20px; width:150px; height:24px; border: 1px solid #c0c0c0; color:white; background-color:#6f00ff"
+              style="font-weight:bold; width:100%; height:24px; border: 1px solid #c0c0c0; color:white; background-color:#6f00ff"
             />
           </form>
         </div>
@@ -75,7 +128,7 @@
     </div>
   </body>
   <script type="text/javascript">
-    var socket = io("http://10.50.10.18:3000");
+    var socket = io("http://localhost:3000");
 
     const ctx = document.getElementById("game").getContext("2d");
 
@@ -194,21 +247,29 @@
 
     var render = function() {
       ctx.clearRect(0, 0, 800, 600);
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+
       document.getElementById("player").innerHTML = "";
       document.getElementById(
         "totalPlayers"
       ).innerHTML = `Participantes (${players.length})`;
       for (player of players) {
         if (socket.id === player.id) {
-          ctx.fillStyle = "#6f00ff";
+          console.log(player.avatar);
+          ctx.fillText(player.avatar, player.x, player.y);
         } else {
           ctx.fillStyle = "#696969";
+          //ctx.fillRect(player.x, player.y, 20, 20);
+          ctx.fillText(player.avatar, player.x, player.y);
         }
-        ctx.fillRect(player.x, player.y, 20, 20);
 
         if (player.id === socket.id) {
           document.getElementById("player").innerHTML +=
             "<b style='color:#6f00ff'>" +
+            player.avatar +
+            " " +
             player.name +
             " - " +
             player.points +
@@ -216,6 +277,8 @@
         } else {
           document.getElementById("player").innerHTML +=
             "<span style='color:#696969'>" +
+            player.avatar +
+            " " +
             player.name +
             " - " +
             player.points +
@@ -230,7 +293,8 @@
     var renderFruits = function() {
       for (fruit of fruits) {
         ctx.fillStyle = "green";
-        ctx.fillRect(fruit.x, fruit.y, 20, 20);
+        // ctx.fillRect(fruit.x, fruit.y, 20, 20);
+        ctx.fillText(fruit.avatar, fruit.x, fruit.y);
         //ctx.fillText("\ud83c\udf4e", fruit.x, fruit.y);
       }
     };
@@ -239,7 +303,9 @@
       .getElementById("playButton")
       .addEventListener("click", function(event) {
         event.preventDefault();
-        event.preventDefault();
+
+        var avatar = document.querySelector('input[name="avatar"]:checked');
+
         if (
           document
             .getElementById("playerName")
@@ -249,9 +315,35 @@
           alert("Favor informar o nome.");
           document.getElementById("playerName").value = "";
           document.getElementById("playerName").focus();
+        } else if (!avatar) {
+          alert("Favor escolher o avatar.");
         } else {
+          switch (avatar.value) {
+            case "alien":
+              avatar = "\ud83d\udc7d";
+              break;
+            case "ghost":
+              avatar = "\ud83d\udc7b";
+              break;
+            case "space-invader":
+              avatar = "\ud83d\udc7e";
+              break;
+            case "clown":
+              avatar = "\ud83e\udd21";
+              break;
+            case "poop":
+              avatar = "\ud83d\udca9";
+              break;
+            case "robot":
+              avatar = "\ud83e\udd16";
+              break;
+            default:
+              break;
+          }
+
           socket.emit("startGame", {
-            name: document.getElementById("playerName").value
+            name: document.getElementById("playerName").value,
+            avatar: avatar
           });
           document.getElementById("gameContainer").style.display = "flex";
           document.getElementById("placar").style.display = "flex";

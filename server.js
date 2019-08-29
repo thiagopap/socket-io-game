@@ -24,6 +24,7 @@ io.on("connection", socket => {
     let player = createPlayer(
       socket.id,
       data.name,
+      data.avatar,
       20 * Math.floor(Math.random() * maxElementX),
       20 * Math.floor(Math.random() * maxElementY),
       0
@@ -66,18 +67,20 @@ io.on("connection", socket => {
 const maxElementX = 780 / 20 + 1;
 const maxElementY = 580 / 20;
 
-var createPlayer = (id, name, x, y, points) => {
+var createPlayer = (id, name, avatar, x, y, points) => {
   return {
     id: id,
     name: name,
+    avatar: avatar,
     x: x,
     y: y,
     points: points
   };
 };
 
-var createFruit = (x, y, points) => {
+var createFruit = (avatar, x, y, points) => {
   return {
+    avatar: avatar,
     x: x,
     y: y,
     points: points
@@ -91,7 +94,7 @@ var generateRandomFruit = function() {
   var fruitExists = fruits.find(f => f.x == randomX && f.y == randomY);
 
   if (!fruitExists) {
-    var fruit = createFruit(randomX, randomY, 1);
+    var fruit = createFruit("\ud83c\udf4e", randomX, randomY, 1);
     return fruit;
   } else {
     return generateRandomFruit();
