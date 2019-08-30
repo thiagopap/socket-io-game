@@ -58,14 +58,14 @@ io.on("connection", socket => {
 
   socket.on("disconnect", () => {
     players = players.filter(function(currentPlayer) {
-      return currentPlayer.id != socket.id;
+      return currentPlayer.id !== socket.id;
     });
     socket.broadcast.emit("updateGame", players);
   });
 });
 ///////////////////////////////////////////////////////////
 const maxElementX = 780 / 20 + 1;
-const maxElementY = 580 / 20;
+const maxElementY = 580 / 20 + 1;
 
 var createPlayer = (id, name, avatar, x, y, points) => {
   return {
@@ -102,10 +102,12 @@ var generateRandomFruit = function() {
 };
 
 setInterval(() => {
-  var fruit = generateRandomFruit();
-  if (fruit) {
-    fruits.push(fruit);
+  if (fruits.length < (800 / 20) * (600 / 20)) {
+    var fruit = generateRandomFruit();
+    if (fruit) {
+      fruits.push(fruit);
+    }
   }
-}, 3000);
+}, 500);
 ///////////////////////////////////////////////////////////
 server.listen(3000);

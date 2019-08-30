@@ -251,17 +251,19 @@
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
 
+      renderFruits();
+
       document.getElementById("player").innerHTML = "";
       document.getElementById(
         "totalPlayers"
       ).innerHTML = `Participantes (${players.length})`;
       for (player of players) {
         if (socket.id === player.id) {
-          console.log(player.avatar);
+          ctx.fillStyle = "rgba(0,0,0,1)";
           ctx.fillText(player.avatar, player.x, player.y);
         } else {
-          ctx.fillStyle = "#696969";
           //ctx.fillRect(player.x, player.y, 20, 20);
+          ctx.fillStyle = "rgba(0,0,0,0.5)";
           ctx.fillText(player.avatar, player.x, player.y);
         }
 
@@ -285,7 +287,6 @@
             " pontos</span><br/>";
         }
       }
-      renderFruits();
 
       window.requestAnimationFrame(render);
     };
@@ -295,7 +296,6 @@
         ctx.fillStyle = "green";
         // ctx.fillRect(fruit.x, fruit.y, 20, 20);
         ctx.fillText(fruit.avatar, fruit.x, fruit.y);
-        //ctx.fillText("\ud83c\udf4e", fruit.x, fruit.y);
       }
     };
 
