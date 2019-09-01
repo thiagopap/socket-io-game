@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Document</title>
+    <title>Multiplayer Socket-io Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
     <style type="text/css">
@@ -100,15 +100,37 @@
         </div>
         <div
           id="gameContainer"
-          style="display:none; flex:1; justify-content: center; align-items:center"
+          style="display:none; flex:1; flex-direction:column;justify-content: center; align-items:center;"
         >
-          <canvas
-            id="game"
-            width="800"
-            height="600"
-            style="border:2px solid black; box-shadow: 0 0 8px #b1b1b1; background-color: #f8f8f8;"
-          >
-          </canvas>
+          <div id="gameDuration" style="display:flex;font-size:20px"></div>
+          <div style="width:800px;height:600px;position:relative;">
+            <div
+              id="winnerCongrats"
+              style="display:none;align-items:center;justify-content:center;flex-direction:column;color:white;width:802px;height:602px;position:absolute;top:1;left:1;background:rgba(0,0,0,0.7);"
+            >
+              <div style="font-size:48px;margin-bottom:20px">PARABÉNS!!!!!</div>
+              <div style="width:200px;height:300px;overflow: hidden;">
+                <div
+                  id="winner"
+                  style="justify-content:center;align-items:center; display:flex;flex-direction:column;text-align:center;width:200px;height:300px;border-radius: 50%/50%; background: rgba(255, 255, 255, 0.8)"
+                >
+                  <div id="winnerAvatar" style="font-size:120px"></div>
+                  <div
+                    id="winnerName"
+                    style="font-size:40px;color:#6f00ff"
+                  ></div>
+                </div>
+              </div>
+              <div id="gameRestartDuration" style="margin-top:20px"></div>
+            </div>
+            <canvas
+              id="game"
+              width="800"
+              height="600"
+              style="border:2px solid black; box-shadow: 0 0 8px #b1b1b1; background-color: #f8f8f8;"
+            >
+            </canvas>
+          </div>
           <audio
             id="audioCoin"
             src="https://themushroomkingdom.net/sounds/wav/smw/smw_coin.wav"
@@ -131,19 +153,27 @@
     var socket = io("http://localhost:3000");
 
     const ctx = document.getElementById("game").getContext("2d");
-
     const UP = 37;
     const LEFT = 38;
     const DOWN = 39;
     const RIGHT = 40;
-
     const pixelsPerStep = 20;
 
     var lastKeyPressed;
-
     var players = [];
     var currentPlayer = null;
     var fruits = [];
+
+    $(window).on("unload", function() {
+      players = players.filter(function(currentPlayer) {
+        return currentPlayer.id !== socket.id;
+      });
+      players.sort(function(a, b) {
+        return b.points - a.points;
+      });
+      socket.disconnect();
+      return "";
+    });
 
     $(document).ready(function() {
       document.getElementById("playerName").focus();
@@ -151,15 +181,112 @@
       $(document).keydown(function(e) {
         processInput(e.keyCode || e.which);
       });
+
+      document
+        .getElementById("playButton")
+        .addEventListener("click", function(event) {
+          event.preventDefault();
+
+          var avatar = document.querySelector('input[name="avatar"]:checked');
+
+          if (
+            document
+              .getElementById("playerName")
+              .value.toString()
+              .trim() === ""
+          ) {
+            alert("Favor informar o nome.");
+            document.getElementById("playerName").value = "";
+            document.getElementById("playerName").focus();
+          } else if (!avatar) {
+            alert("Favor escolher o avatar.");
+          } else {
+            switch (avatar.value) {
+              case "alien":
+                avatar = "\ud83d\udc7d";
+                break;
+              case "ghost":
+                avatar = "\ud83d\udc7b";
+                break;
+              case "space-invader":
+                avatar = "\ud83d\udc7e";
+                break;
+              case "clown":
+                avatar = "\ud83e\udd21";
+                break;
+              case "poop":
+                avatar = "\ud83d\udca9";
+                break;
+              case "robot":
+                avatar = "\ud83e\udd16";
+                break;
+              default:
+                break;
+            }
+
+            socket.emit("startMatch", {
+              name: document.getElementById("playerName").value,
+              avatar: avatar
+            });
+            document.getElementById("gameContainer").style.display = "flex";
+            document.getElementById("placar").style.display = "flex";
+            document.getElementById("playerInfo").style.display = "none";
+            window.requestAnimationFrame(render);
+          }
+        });
     });
 
-    $(window).on("unload", function() {
-      players = players.filter(function(currentPlayer) {
-        return currentPlayer.id !== socket.id;
-      });
-      socket.disconnect();
-      return "ok";
-    });
+    var render = function() {
+      ctx.clearRect(0, 0, 800, 600);
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+
+      renderFruits();
+
+      document.getElementById("player").innerHTML = "";
+      document.getElementById(
+        "totalPlayers"
+      ).innerHTML = `Participantes (${players.length})`;
+      for (player of players) {
+        if (socket.id === player.id) {
+          ctx.fillStyle = "rgba(0,0,0,1)";
+          ctx.fillText(player.avatar, player.x, player.y);
+        } else {
+          ctx.fillStyle = "rgba(0,0,0,0.5)";
+          ctx.fillText(player.avatar, player.x, player.y);
+        }
+
+        if (player.id === socket.id) {
+          document.getElementById("player").innerHTML +=
+            "<b style='color:#6f00ff'>" +
+            player.avatar +
+            " " +
+            player.name +
+            " - " +
+            player.points +
+            " pontos</b><br/>";
+        } else {
+          document.getElementById("player").innerHTML +=
+            "<span style='color:#696969'>" +
+            player.avatar +
+            " " +
+            player.name +
+            " - " +
+            player.points +
+            " pontos</span><br/>";
+        }
+      }
+
+      window.requestAnimationFrame(render);
+    };
+
+    var renderFruits = function() {
+      for (fruit of fruits) {
+        ctx.fillStyle = "rgba(0,0,0,1)";
+        ctx.fillText(fruit.avatar, fruit.x, fruit.y);
+      }
+    };
 
     var processInput = function(keyCode) {
       lastKeyPressed = keyCode;
@@ -169,11 +296,17 @@
 
         var tempPlayer = players.find(p => p.id === socket.id);
 
-        tempPlayer.x = currentPlayer.x;
-        tempPlayer.y = currentPlayer.y;
-        tempPlayer.points = currentPlayer.points;
+        if (tempPlayer) {
+          tempPlayer.x = currentPlayer.x;
+          tempPlayer.y = currentPlayer.y;
+          tempPlayer.points = currentPlayer.points;
 
-        socket.emit("updatePlayer", currentPlayer);
+          players.sort(function(a, b) {
+            return b.points - a.points;
+          });
+
+          socket.emit("updatePlayer", currentPlayer);
+        }
       }
     };
 
@@ -209,18 +342,14 @@
         );
 
         if (capturedFruit) {
-          console.log(
-            "capturedFruit: ",
-            capturedFruit.x,
-            capturedFruit.y,
-            currentPlayer.name,
-            currentPlayer.x,
-            currentPlayer.y
-          );
           currentPlayer.points += capturedFruit.points;
           socket.emit("capturedFruit", capturedFruit);
           fruits = fruits.filter(function(f) {
             return !(f.x == capturedFruit.x && f.y == capturedFruit.y);
+          });
+
+          players.sort(function(a, b) {
+            return b.points - a.points;
           });
 
           if (currentPlayer.points % 10 === 0) {
@@ -234,122 +363,66 @@
 
     socket.on("createdPlayers", data => {
       players = data;
+      players.sort(function(a, b) {
+        return b.points - a.points;
+      });
       currentPlayer = players.find(p => p.id === socket.id);
-    });
-
-    socket.on("updateGame", function(data) {
-      players = data;
     });
 
     socket.on("createdFruits", function(data) {
       fruits = data;
     });
 
-    var render = function() {
-      ctx.clearRect(0, 0, 800, 600);
-      ctx.font = "bold 20px sans-serif";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-
-      renderFruits();
-
-      document.getElementById("player").innerHTML = "";
-      document.getElementById(
-        "totalPlayers"
-      ).innerHTML = `Participantes (${players.length})`;
-      for (player of players) {
-        if (socket.id === player.id) {
-          ctx.fillStyle = "rgba(0,0,0,1)";
-          ctx.fillText(player.avatar, player.x, player.y);
-        } else {
-          //ctx.fillRect(player.x, player.y, 20, 20);
-          ctx.fillStyle = "rgba(0,0,0,0.5)";
-          ctx.fillText(player.avatar, player.x, player.y);
-        }
-
-        if (player.id === socket.id) {
-          document.getElementById("player").innerHTML +=
-            "<b style='color:#6f00ff'>" +
-            player.avatar +
-            " " +
-            player.name +
-            " - " +
-            player.points +
-            " pontos</b><br/>";
-        } else {
-          document.getElementById("player").innerHTML +=
-            "<span style='color:#696969'>" +
-            player.avatar +
-            " " +
-            player.name +
-            " - " +
-            player.points +
-            " pontos</span><br/>";
-        }
-      }
-
-      window.requestAnimationFrame(render);
-    };
-
-    var renderFruits = function() {
-      for (fruit of fruits) {
-        ctx.fillStyle = "green";
-        // ctx.fillRect(fruit.x, fruit.y, 20, 20);
-        ctx.fillText(fruit.avatar, fruit.x, fruit.y);
-      }
-    };
-
-    document
-      .getElementById("playButton")
-      .addEventListener("click", function(event) {
-        event.preventDefault();
-
-        var avatar = document.querySelector('input[name="avatar"]:checked');
-
-        if (
-          document
-            .getElementById("playerName")
-            .value.toString()
-            .trim() === ""
-        ) {
-          alert("Favor informar o nome.");
-          document.getElementById("playerName").value = "";
-          document.getElementById("playerName").focus();
-        } else if (!avatar) {
-          alert("Favor escolher o avatar.");
-        } else {
-          switch (avatar.value) {
-            case "alien":
-              avatar = "\ud83d\udc7d";
-              break;
-            case "ghost":
-              avatar = "\ud83d\udc7b";
-              break;
-            case "space-invader":
-              avatar = "\ud83d\udc7e";
-              break;
-            case "clown":
-              avatar = "\ud83e\udd21";
-              break;
-            case "poop":
-              avatar = "\ud83d\udca9";
-              break;
-            case "robot":
-              avatar = "\ud83e\udd16";
-              break;
-            default:
-              break;
-          }
-
-          socket.emit("startGame", {
-            name: document.getElementById("playerName").value,
-            avatar: avatar
-          });
-          document.getElementById("gameContainer").style.display = "flex";
-          document.getElementById("placar").style.display = "flex";
-          document.getElementById("playerInfo").style.display = "none";
-          window.requestAnimationFrame(render);
-        }
+    socket.on("updateMatch", function(data) {
+      players = data;
+      players.sort(function(a, b) {
+        return b.points - a.points;
       });
+    });
+
+    socket.on("matchCurrentDuration", function(data) {
+      console.log("matchCurrentDuration", data);
+
+      var gameDuration = new Date(null);
+      gameDuration.setSeconds(data);
+
+      document.getElementById("gameDuration").innerHTML =
+        "&#x23F0;" + gameDuration.toISOString().substr(11, 8) + " &#x23F0;";
+    });
+
+    socket.on("endMatch", function(data) {
+      console.log("endMatch", data);
+
+      var gameDuration = new Date(null);
+      gameDuration.setSeconds(data);
+
+      document.getElementById("gameDuration").innerHTML =
+        "&#x23F0; " + gameDuration.toISOString().substr(11, 8) + " &#x23F0;";
+
+      if (players.length > 0) {
+        winner = players.reduce(function(prev, current) {
+          return prev.points > current.points ? prev : current;
+        });
+
+        document.getElementById("winnerAvatar").innerHTML = winner.avatar;
+        document.getElementById("winnerName").innerHTML = winner.name;
+      }
+
+      document.getElementById("winnerCongrats").style.display = "flex";
+    });
+
+    socket.on("restartMatchCountDown", function(data) {
+      console.log("restartMatchCountDown", data);
+
+      document.getElementById(
+        "gameRestartDuration"
+      ).innerHTML = `Aguarde, o jogo reiniciará em ${data} segundos.`;
+
+      if (data === 0) {
+        setTimeout(() => {
+          document.getElementById("winnerCongrats").style.display = "none";
+        }, 1000);
+      }
+    });
   </script>
 </html>
