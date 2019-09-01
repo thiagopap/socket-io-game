@@ -381,7 +381,7 @@
     });
 
     socket.on("matchCurrentDuration", function(data) {
-      console.log("matchCurrentDuration", data);
+      //console.log("matchCurrentDuration", data);
 
       var gameDuration = new Date(null);
       gameDuration.setSeconds(data);
@@ -391,7 +391,7 @@
     });
 
     socket.on("endMatch", function(data) {
-      console.log("endMatch", data);
+      //console.log("endMatch", data);
 
       var gameDuration = new Date(null);
       gameDuration.setSeconds(data);
@@ -412,7 +412,7 @@
     });
 
     socket.on("restartMatchCountDown", function(data) {
-      console.log("restartMatchCountDown", data);
+      //console.log("restartMatchCountDown", data);
 
       document.getElementById(
         "gameRestartDuration"

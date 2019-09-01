@@ -105,12 +105,12 @@ io.on("connection", socket => {
   var matchRestartInterval = setInterval(matchRestartProcess, 1000);
 
   function matchRestartProcess() {
-    console.log(
-      "matchRestartProcess",
-      matchCurrentDuration,
-      matchRestartCountDown,
-      socket.id
-    );
+    // console.log(
+    //   "matchRestartProcess",
+    //   matchCurrentDuration,
+    //   matchRestartCountDown,
+    //   socket.id
+    // );
 
     if (matchCurrentDuration <= 0) {
       if (matchRestartCountDown >= 0) {
