@@ -165,6 +165,7 @@
     var fruits = [];
 
     $(window).on("unload", function() {
+      clearInterval(movePlayerInterval);
       players = players.filter(function(currentPlayer) {
         return currentPlayer.id !== socket.id;
       });
@@ -179,9 +180,54 @@
       document.getElementById("playerName").focus();
 
       $(document).keydown(function(e) {
-        processInput(e.keyCode || e.which);
+        lastKeyPressed = (e.keyCode || e.which);
+        //processInput(e.keyCode || e.which);
       });
 
+      function swipedetect(el){
+          var touchsurface = el,
+          swipedir,
+          startX,
+          startY,
+          distX,
+          distY,
+          threshold = 10, //required min distance traveled to be considered swipe
+          restraint = 100, // maximum distance allowed at the same time in perpendicular direction
+          allowedTime = 300, // maximum time allowed to travel that distance
+          elapsedTime,
+          startTime;
+        
+          touchsurface.addEventListener('touchstart', function(e){
+              var touchobj = e.changedTouches[0]
+              swipedir = 'none'
+              dist = 0
+              startX = touchobj.pageX
+              startY = touchobj.pageY
+              startTime = new Date().getTime() // record time when finger first makes contact with surface
+              e.preventDefault()
+          }, false)
+        
+          touchsurface.addEventListener('touchmove', function(e){
+              e.preventDefault() // prevent scrolling when inside DIV
+          }, false)
+        
+          touchsurface.addEventListener('touchend', function(e){
+              var touchobj = e.changedTouches[0]
+              distX = touchobj.pageX - startX // get horizontal dist traveled by finger while in contact with surface
+              distY = touchobj.pageY - startY // get vertical dist traveled by finger while in contact with surface
+              elapsedTime = new Date().getTime() - startTime // get time elapsed
+              if (elapsedTime <= allowedTime){ // first condition for awipe met
+                  if (Math.abs(distX) >= threshold && Math.abs(distY) <= restraint){ // 2nd condition for vertical swipe met
+                      lastKeyPressed = (distX < 0)? UP : DOWN // if dist traveled is negative, it indicates left swipe
+                  }
+                  else if (Math.abs(distY) >= threshold && Math.abs(distX) <= restraint){ // 2nd condition for horizontal swipe met
+                      lastKeyPressed = (distY < 0)? LEFT : RIGHT // if dist traveled is negative, it indicates up swipe
+                  }
+              }
+              e.preventDefault()
+          }, false)
+      }
+      
       document
         .getElementById("playButton")
         .addEventListener("click", function(event) {
@@ -223,6 +269,7 @@
               default:
                 break;
             }
+            swipedetect(document.getElementById("game"));
 
             socket.emit("startMatch", {
               name: document.getElementById("playerName").value,
@@ -235,6 +282,10 @@
           }
         });
     });
+
+    function generateRandomKeyPressed(min, max) {
+      return Math.floor(min + Math.random()*(max + 1 - min))
+    }
 
     var render = function() {
       ctx.clearRect(0, 0, 800, 600);
@@ -278,7 +329,7 @@
         }
       }
 
-      window.requestAnimationFrame(render);
+      //window.requestAnimationFrame(render);
     };
 
     var renderFruits = function() {
@@ -357,9 +408,17 @@
           }
         }
 
-        lastKeyPressed = null;
+        //lastKeyPressed = null;
       }
     };
+
+    var movePlayerInterval;
+    function movePlayer(){
+      movePlayerInterval = setInterval(() => {
+        processInput(lastKeyPressed);
+        render();
+      }, 100);
+    }
 
     socket.on("createdPlayers", data => {
       players = data;
@@ -367,6 +426,8 @@
         return b.points - a.points;
       });
       currentPlayer = players.find(p => p.id === socket.id);
+      lastKeyPressed = generateRandomKeyPressed(UP, RIGHT);
+      movePlayer();
     });
 
     socket.on("createdFruits", function(data) {
@@ -378,6 +439,7 @@
       players.sort(function(a, b) {
         return b.points - a.points;
       });
+      currentPlayer = players.find(p => p.id === socket.id);
     });
 
     socket.on("matchCurrentDuration", function(data) {
@@ -392,6 +454,7 @@
 
     socket.on("endMatch", function(data) {
       //console.log("endMatch", data);
+      clearInterval(movePlayerInterval);
 
       var gameDuration = new Date(null);
       gameDuration.setSeconds(data);
@@ -406,9 +469,9 @@
 
         document.getElementById("winnerAvatar").innerHTML = winner.avatar;
         document.getElementById("winnerName").innerHTML = winner.name;
+        
+        document.getElementById("winnerCongrats").style.display = "flex";
       }
-
-      document.getElementById("winnerCongrats").style.display = "flex";
     });
 
     socket.on("restartMatchCountDown", function(data) {
@@ -419,9 +482,14 @@
       ).innerHTML = `Aguarde, o jogo reiniciará em ${data} segundos.`;
 
       if (data === 0) {
-        setTimeout(() => {
+        //setTimeout(() => {
+          clearInterval(movePlayerInterval);
+          if (currentPlayer) {
+            currentPlayer.points = 0;
+          }
           document.getElementById("winnerCongrats").style.display = "none";
-        }, 1000);
+          movePlayer();
+        //}, 1000);
       }
     });
   </script>

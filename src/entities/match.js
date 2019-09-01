@@ -9,10 +9,10 @@ const maxComponentX = (boardWidth - componentWidth) / componentWidth + 1;
 const maxComponentY = (boardHeight - componentHeight) / componentHeight + 1;
 
 class Match {
-  players = [];
-  fruits = [];
-
-  constructor() {}
+  constructor() {
+    this.players = [];
+    this.fruits = [];
+  }
 
   get matchDuration() {
     return matchDuration;

@@ -127,15 +127,16 @@ io.on("connection", socket => {
         1000
       );
 
-      socket.emit("createdPlayers", match.players);
+      socket.emit("updateMatch", match.players);
       socket.emit("createdFruits", match.fruits);
     }
   }
 
   setInterval(() => {
-    if (matchCurrentDuration > 0) {
-      socket.emit("createdFruits", match.fruits);
+    if (matchCurrentDuration <= 0) {
+      match.fruits = [];
     }
+    socket.emit("createdFruits", match.fruits);
   }, 20);
 });
 ///////////////////////////////////////////////////////////
@@ -206,7 +207,6 @@ function restartMatch() {
   for (player of match.players) {
     player.points = 0;
   }
-
   matchCurrentDuration = match.matchDuration;
   matchRestartCountDown = match.restartMatchDuration;
   match.fruits = [];
