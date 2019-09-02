@@ -10,8 +10,8 @@ var { Match, Player, Fruit } = require("./src/entities");
 ///////////////////////////////////////////////////////////
 //SERVER CONFIGURATIONS
 ///////////////////////////////////////////////////////////
-app.use(express.static(path.join(__dirname + "public")));
-app.set("views", path.join(__dirname, "public"));
+app.use(express.static(path.join(__dirname + "/public")));
+app.set("views", path.join(__dirname, "/public"));
 app.engine("html", require("ejs").renderFile);
 app.set("view engine", "html");
 
@@ -32,7 +32,7 @@ var matchRestarted = false;
 //SOCKET IO
 ///////////////////////////////////////////////////////////
 io.on("connection", socket => {
-  console.log(`Client connected: ${socket.id}`);
+  //console.log(`Client connected: ${socket.id}`);
 
   if (match.players.length >= match.playersAmount) {
     console.log("Maximum amount of players exceeded.");
@@ -73,7 +73,7 @@ io.on("connection", socket => {
   });
 
   socket.on("disconnect", () => {
-    console.log(`Client disconnected: ${socket.id}`);
+    //console.log(`Client disconnected: ${socket.id}`);
 
     match.players = match.players.filter(function(currentPlayer) {
       return currentPlayer.id !== socket.id;
@@ -94,9 +94,10 @@ io.on("connection", socket => {
   );
 
   function matchCurrentDurationProcess() {
-    if (matchCurrentDuration <= 0) {
+    //console.log(matchCurrentDuration);
+    if (matchCurrentDuration < 0) {
+      //socket.emit("endMatch", matchCurrentDuration);
       clearInterval(matchCurrentDurationInterval);
-      socket.emit("endMatch", matchCurrentDuration);
     } else {
       socket.emit("matchCurrentDuration", matchCurrentDuration);
     }
@@ -112,7 +113,7 @@ io.on("connection", socket => {
     //   socket.id
     // );
 
-    if (matchCurrentDuration <= 0) {
+    if (matchCurrentDuration < 0) {
       if (matchRestartCountDown >= 0) {
         socket.emit("restartMatchCountDown", matchRestartCountDown);
       }
@@ -133,7 +134,7 @@ io.on("connection", socket => {
   }
 
   setInterval(() => {
-    if (matchCurrentDuration <= 0) {
+    if (matchCurrentDuration < 0) {
       match.fruits = [];
     }
     socket.emit("createdFruits", match.fruits);
@@ -197,7 +198,7 @@ var fruitCreationProcess = setInterval(() => {
 var matchInterval = setInterval(matchIntervalProcess, 1000);
 
 function matchIntervalProcess() {
-  if (matchCurrentDuration > 0) {
+  if (matchCurrentDuration >= 0) {
     matchRestarted = false;
   }
   matchCurrentDuration -= 1;
