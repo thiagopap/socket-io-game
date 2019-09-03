@@ -343,8 +343,6 @@
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
 
-        renderFruits();
-
         document.getElementById("player").innerHTML = "";
         document.getElementById(
           "totalPlayers"
@@ -377,6 +375,8 @@
               player.points +
               " pontos</span><br/>";
           }
+
+          renderFruits();
         }
 
         window.requestAnimationFrame(render);
@@ -470,7 +470,7 @@
       }
       movePlayerInterval = setInterval(() => {
         processInput(lastKeyPressed);
-      }, 150);
+      }, 100);
     }
 
     socket.on("createdPlayers", data => {
