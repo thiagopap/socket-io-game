@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const cors = require("cors");
 
 const app = express();
 const server = require("http").createServer(app);
@@ -10,6 +11,7 @@ var { Match, Player, Fruit } = require("./src/entities");
 ///////////////////////////////////////////////////////////
 //SERVER CONFIGURATIONS
 ///////////////////////////////////////////////////////////
+app.use(cors());
 app.use(express.static(path.join(__dirname + "/public")));
 app.set("views", path.join(__dirname, "/public"));
 app.engine("html", require("ejs").renderFile);
@@ -19,7 +21,7 @@ app.get("/", (req, res) => {
   res.render("index.html");
 });
 
-server.listen(3000);
+server.listen(process.env.PORT || 3000);
 ///////////////////////////////////////////////////////////
 //GLOBAL VARIABLES
 ///////////////////////////////////////////////////////////
