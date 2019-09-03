@@ -380,7 +380,7 @@
         }
 
         window.requestAnimationFrame(render);
-      }, 100 / fps);
+      }, 1000 / fps);
     };
 
     var renderFruits = function() {
@@ -470,7 +470,7 @@
       }
       movePlayerInterval = setInterval(() => {
         processInput(lastKeyPressed);
-      }, 100);
+      }, 150);
     }
 
     socket.on("createdPlayers", data => {
