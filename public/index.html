@@ -337,50 +337,50 @@
     }
 
     var render = function() {
-      setTimeout(function() {
-        ctx.clearRect(0, 0, 800, 600);
-        ctx.font = "bold 20px sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
+      //setTimeout(function() {
+      ctx.clearRect(0, 0, 800, 600);
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
 
-        document.getElementById("player").innerHTML = "";
-        document.getElementById(
-          "totalPlayers"
-        ).innerHTML = `Participantes (${players.length})`;
-        for (player of players) {
-          if (socket.id === player.id) {
-            ctx.fillStyle = "rgba(0,0,0,1)";
-            ctx.fillText(player.avatar, player.x, player.y);
-          } else {
-            ctx.fillStyle = "rgba(0,0,0,0.5)";
-            ctx.fillText(player.avatar, player.x, player.y);
-          }
-
-          if (player.id === socket.id) {
-            document.getElementById("player").innerHTML +=
-              "<b style='color:#6f00ff'>" +
-              player.avatar +
-              " " +
-              player.name +
-              " - " +
-              player.points +
-              " pontos</b><br/>";
-          } else {
-            document.getElementById("player").innerHTML +=
-              "<span style='color:#696969'>" +
-              player.avatar +
-              " " +
-              player.name +
-              " - " +
-              player.points +
-              " pontos</span><br/>";
-          }
-
-          renderFruits();
+      document.getElementById("player").innerHTML = "";
+      document.getElementById(
+        "totalPlayers"
+      ).innerHTML = `Participantes (${players.length})`;
+      for (player of players) {
+        if (socket.id === player.id) {
+          ctx.fillStyle = "rgba(0,0,0,1)";
+          ctx.fillText(player.avatar, player.x, player.y);
+        } else {
+          ctx.fillStyle = "rgba(0,0,0,0.5)";
+          ctx.fillText(player.avatar, player.x, player.y);
         }
 
-        window.requestAnimationFrame(render);
-      }, 1000 / fps);
+        if (player.id === socket.id) {
+          document.getElementById("player").innerHTML +=
+            "<b style='color:#6f00ff'>" +
+            player.avatar +
+            " " +
+            player.name +
+            " - " +
+            player.points +
+            " pontos</b><br/>";
+        } else {
+          document.getElementById("player").innerHTML +=
+            "<span style='color:#696969'>" +
+            player.avatar +
+            " " +
+            player.name +
+            " - " +
+            player.points +
+            " pontos</span><br/>";
+        }
+
+        renderFruits();
+      }
+
+      window.requestAnimationFrame(render);
+      //}, 1000 / fps);
     };
 
     var renderFruits = function() {
